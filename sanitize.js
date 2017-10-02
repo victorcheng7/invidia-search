@@ -6,11 +6,15 @@ function fileToJson(file){ //file -> javascript object
   return new Promise((resolve, reject) => {
     fs.readFile(file, 'utf8', function (err,data) {
       if (err) reject(console.log(err));
-      /*fs.writeFile("./output.txt", JSON.stringify(JSON.parse(data)[0]), function(err) {
-          if(err) console.log(err);
-      });*/
+      writeToOutput(JSON.parse(data));
       resolve(JSON.parse(data));
     });
+  });
+}
+
+function writeToOutput(data){
+  fs.writeFile("./output.txt", JSON.stringify(data), function(err) {
+      if(err) console.log(err);
   });
 }
 
@@ -53,15 +57,24 @@ function sanitizeText(data){ // Output Sanitized Text
       var aliasStats = aliasVideo["info"]["statistics"];
       aliasVideo["relevantScore"] = (aliasStats["likeCount"] - aliasStats["dislikeCount"])/aliasStats["viewCount"];
       result.push(transcriptCues);
-      console.log(transcriptCues);
     }
 }
 
 async function run(){
-    const b = await fileToJson('./output.txt');
-    const cleanedUpData = sanitizeText(b); //TODO make the sanitized text into an array format.
-    console.log(JSON.parse(cleanedUpData));
-    search(b, "we're going");
+    const b = await fileToJson('./dannyinput.txt');
+    try{
+      console.log("Sanitizing text...");
+      const cleanedUpData = await sanitizeText(b);
+      //console.log(JSON.parse(cleanedUpData));
+      console.log("Doing search on sanitized text...");
+      const searchResults = await search(b, "we're going");
+      console.log("Sorting results...");
+      await sortResults(searchResults);
+      console.log(searchResults);
+    }
+    catch(error){
+      console.log(error);
+    }
 }
 
 run();
@@ -75,21 +88,22 @@ function median(values) {
 
 function returnMedianViewCount(result){
   let viewCountArray = []; //NOTE make array of viewCounts and pass into median() to return median
-  for(video in newResult){
-    viewCountArray.push(newResult[video]["statistics"]["viewCount"]);
+  for(video in result){
+    console.log(result);
+    viewCountArray.push(result[video]["info"]["statistics"]["viewCount"]); //TODO error cannot read viewCount of undefined
   }
   return median(viewCountArray);
 }
 
 function sortResults(result){
-    newResult.sort( function(a,b){ return b["relevantScore"]-a["relevantScore"]}); //NOTE sort based on relevant scores
+    result.sort( function(a,b){ return b["relevantScore"]-a["relevantScore"]}); //NOTE sort based on relevant scores
     var median = returnMedianViewCount(result);
     var top50 = [];
     var bottom50 = [];
     for(video in result){
-      var viewCount = result[index]["info"]["statistics"]["viewCount"];
-      if(viewCount >= median) top50.push(result[index]);
-      else bottom50.push(result[index]);
+      var viewCount = result[video]["info"]["statistics"]["viewCount"];
+      if(viewCount >= median) top50.push(result[video]);
+      else bottom50.push(result[video]);
     }
 }
 
@@ -108,5 +122,6 @@ function search(searchArray, toSearch){
     };
     var fuse = new Fuse(searchArray, options);
     var results = fuse.search(toSearch);
-    console.log(results.length);
+    console.log(results.length, "results");
+    return results;
 }
