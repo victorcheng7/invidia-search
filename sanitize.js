@@ -6,42 +6,47 @@ function fileToJson(file){ //file -> javascript object
   return new Promise((resolve, reject) => {
     fs.readFile(file, 'utf8', function (err,data) {
       if (err) reject(console.log(err));
-      console.log(JSON.parse(data)[0]);
+      /*fs.writeFile("./output.txt", JSON.stringify(JSON.parse(data)[0]), function(err) {
+          if(err) console.log(err);
+      });*/
       resolve(JSON.parse(data));
     });
   });
 }
 
-function milliSecondsToTimeStamp(milliseconds){
-    let seconds = Math.floor((milliseconds/1000) % 60);
-    let minutes = Math.floor((milliseconds/(1000*60)) % 60);
-    let hours = Math.floor((milliseconds/(1000*60*60)) % 24);
+function secondsToTimeStamp(seconds){
+    var hours = Math.floor(seconds / 3600);
+    var minutes = Math.floor((seconds % 3600) / 60);
+    var seconds = Math.floor(seconds % 3600 % 60);
     if(seconds < 10) return hours+":"+minutes+":0"+seconds;
-    return result[hours+":"+minutes+":"+seconds];
+    return hours+":"+minutes+":"+seconds;
 }
 
 function sanitizeText(data){ // Output Sanitized Text
     var transcriptCues = Object.assign({}, data);
     for(video in transcriptCues){//  For every video
       var transcript = "";
-      var transcriptLength = 0;
       var index = 0;
       var milliseconds = 0;
       var aliasVideo = transcriptCues[video];
       for(cue in aliasVideo["cues"]){ //  for every cue
         var aliasCue = aliasVideo["cues"][cue];
-        milliseconds += aliasCue["duration"];
-        aliasCue["timestamp"] = milliSecondsToTimeStamp(milliseconds) // NOTE Set timestamp
-        var cleanText = h2p(aliasCue["text"]); // NOTE take out HTML tags
+        aliasCue["timestamp"] = secondsToTimeStamp(aliasCue["timestamp"]); // NOTE Set timestamp
+        //milliseconds += parseInt(aliasCue["duration"]);
+        var cleanText = h2p(aliasCue["text"]); // NOTE take out HTML tags, add extra space, take out \
+        cleanText = cleanText.replace(/\\"/g, '"');
+        //cleanText = cleanText.replace(/\\\\/g, '');
+        cleanText += " ";
         aliasCue["text"] = cleanText;
         //console.log(transcriptCues[transcript]["cues"][cue]["text"]);
         //let temp = transcriptCues[transcript]["cues"][cue]["text"];
         //transcriptCues[transcript]["cues"][cue]["text"] = temp.replace(/<[^>]*>/g, "").replace('&#39;'/g, "'");
         //transcriptCues[transcript]["cues"][cue]["text"] = temp.replace(/<[^>]*>/g, "");
         //console.log(transcriptCues[transcript]["cues"][cue]["text"]);
-        transcript += (cleanText + " ");
-        aliasCue["startIndex"] = transcript.length - cleanText.length; // NOTE set start index
-        aliasCue["endIndex"] = transcript.length - 1; // NOTE set end index
+        transcript += cleanText;
+        if(cue == 0) aliasCue["startIndex"] = transcript.length - cleanText.length;
+        else if(cue != 0) aliasCue["startIndex"] = transcript.length - cleanText.length + 1;// NOTE set start index
+        aliasCue["endIndex"] = transcript.length; // NOTE set end index
       }
       aliasVideo["transcript"] = transcript // NOTE define entire transcript string
       var aliasStats = aliasVideo["info"]["statistics"];
@@ -51,10 +56,12 @@ function sanitizeText(data){ // Output Sanitized Text
 }
 
 async function run(){
-    const b = await fileToJson('./dannyinput.txt');
-    await console.log(sanitizeText(b)[0]);
-    //search(cleanedUpData);
-    return b; //TODO the actual json sorted for the front end to render
+    const b = await fileToJson('./output.txt');
+    const cleanedUpData = sanitizeText(b);
+    console.log(b);
+    console.log(cleanedUpData);
+    console.log(JSON.parse(cleanedUpData));
+    search(cleanedUpData, "I am");
 }
 
 run();
@@ -87,6 +94,7 @@ function sortResults(result){
 }
 
 function search(searchArray, toSearch){
+    toSearch = toSearch.toLowerCase();
     var options = {
       shouldSort: true,
       threshold: 0.3,
@@ -95,10 +103,10 @@ function search(searchArray, toSearch){
       maxPatternLength: 65,
       minMatchCharLength: 1,
       keys: [
-        "cues.text" //TODO try search with entire transcript and check speed + accuracy
+        "transcript" //TODO try search with entire transcript and check speed + accuracy
       ]
     };
     var fuse = new Fuse(searchArray, options);
-    var results = fuse.search("ingrdients");
+    var results = fuse.search(toSearch);
     console.log(results.length);
 }
