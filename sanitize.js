@@ -23,12 +23,13 @@ function secondsToTimeStamp(seconds){
 }
 
 function sanitizeText(data){ // Output Sanitized Text
-    var transcriptCues = Object.assign({}, data);
-    for(video in transcriptCues){//  For every video
+    var result = [];
+    for(video in data){//  For every video
+      var transcriptCues = Object.assign({}, data[video]);
       var transcript = "";
       var index = 0;
       var milliseconds = 0;
-      var aliasVideo = transcriptCues[video];
+      var aliasVideo = transcriptCues;
       for(cue in aliasVideo["cues"]){ //  for every cue
         var aliasCue = aliasVideo["cues"][cue];
         aliasCue["timestamp"] = secondsToTimeStamp(aliasCue["timestamp"]); // NOTE Set timestamp
@@ -46,22 +47,21 @@ function sanitizeText(data){ // Output Sanitized Text
         transcript += cleanText;
         if(cue == 0) aliasCue["startIndex"] = transcript.length - cleanText.length;
         else if(cue != 0) aliasCue["startIndex"] = transcript.length - cleanText.length + 1;// NOTE set start index
-        aliasCue["endIndex"] = transcript.length; // NOTE set end index
+        aliasCue["endIndex"] = transcript.length - 1; // NOTE set end index
       }
       aliasVideo["transcript"] = transcript // NOTE define entire transcript string
       var aliasStats = aliasVideo["info"]["statistics"];
       aliasVideo["relevantScore"] = (aliasStats["likeCount"] - aliasStats["dislikeCount"])/aliasStats["viewCount"];
+      result.push(transcriptCues);
+      console.log(transcriptCues);
     }
-    return transcriptCues;
 }
 
 async function run(){
     const b = await fileToJson('./output.txt');
-    const cleanedUpData = sanitizeText(b);
-    console.log(b);
-    console.log(cleanedUpData);
+    const cleanedUpData = sanitizeText(b); //TODO make the sanitized text into an array format.
     console.log(JSON.parse(cleanedUpData));
-    search(cleanedUpData, "I am");
+    search(b, "we're going");
 }
 
 run();
@@ -103,7 +103,7 @@ function search(searchArray, toSearch){
       maxPatternLength: 65,
       minMatchCharLength: 1,
       keys: [
-        "transcript" //TODO try search with entire transcript and check speed + accuracy
+        "cues.text" //TODO try search with entire transcript and check speed + accuracy
       ]
     };
     var fuse = new Fuse(searchArray, options);
