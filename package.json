@@ -1,0 +1,23 @@
+{
+  "name": "sanitize_search",
+  "version": "1.0.0",
+  "description": "",
+  "main": "upload_to_es.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "dotenv": "^4.0.0",
+    "fuse.js": "^3.1.0",
+    "html2plaintext": "^1.1.1",
+    "mkdirp": "^0.5.1",
+    "request": "^2.81.0",
+    "sort-by": "^1.2.0",
+    "xml2js": "^0.4.18",
+    "youtube-node": "^1.3.2"
+  }
+}
