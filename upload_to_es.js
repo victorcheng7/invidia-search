@@ -5,12 +5,15 @@ var Promise = require("bluebird");
 
 let files = 0;
 var client = new elasticsearch.Client({
-	host: 'https://search-invidia-kg2ywkdhyke7a2lwmkth2zo5rq.us-east-2.es.amazonaws.com/',
+	host: [
+		{
+			host: '37d6b8adea5e4959e1f67d3e9639f557.us-west-1.aws.found.io',
+			auth: 'elastic:sFS3l8RF8xNYfCAsEkIzaWhD',
+			protocol: 'https',
+			port: 9243
+		}
+	]
 });
-
-function sanitize(transcriptData){
-
-}
 
 function deleteClusterIndices() {
 	client.indices.delete({
@@ -26,6 +29,7 @@ function testConnectionToClient() {
 	}, function (error) {
 		if (error) {
 			console.error('Elasticsearch cluster is down!');
+			console.log(error);
 		} else {
 			console.log('Elasticsearch cluster is connected.');
 		}
@@ -68,10 +72,11 @@ function sendVideoDataToClient(data, resolve) {
 }
 
 testConnectionToClient();
-deleteClusterIndices();
 
 //deleteClusterIndices();
-readFile('dannyinput.txt');
+readFile('output.txt');
+
+
 /*
 fs.readdir(__dirname + "/output", (err, files) => {
 	(function loopRead(fileIndex = 0) {
