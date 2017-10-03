@@ -212,3 +212,5 @@ function connectToClient() {
     });
   });
 }
+
+//TODO highlight the right parts for the front end
