@@ -1,17 +1,20 @@
 var fs = require('fs');
 var Fuse = require('fuse.js');
 var h2p = require('html2plaintext');
+var dotenv = require('dotenv');
+dotenv.config();
 var elasticsearch = require('elasticsearch');
 
+/* DEFINE ELASTIC_SEARCH */
 var client = new elasticsearch.Client({
-  host: [
-    {
-      host: '37d6b8adea5e4959e1f67d3e9639f557.us-west-1.aws.found.io',
-      auth: 'elastic:sFS3l8RF8xNYfCAsEkIzaWhD',
-      protocol: 'https',
-      port: 9243
-    }
-  ]
+	host: [
+		{
+			host: process.env.ELASTIC_HOST,
+			auth: process.env.ELASTIC_AUTH,
+			protocol: process.env.ELASTIC_PROTOCOL,
+			port: process.env.ELASTIC_PORT
+		}
+	]
 });
 
 function fileToJson(file){ //file -> javascript object
@@ -213,4 +216,4 @@ function connectToClient() {
   });
 }
 
-//TODO highlight the right parts for the front end
+//TODO highlight the right parts for the front end and the cues that are relevant with its timestamp

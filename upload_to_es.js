@@ -1,16 +1,18 @@
-var elasticsearch = require('elasticsearch');
 var path = require('path');
 var fs = require('fs');
 var Promise = require("bluebird");
+var dotenv = require('dotenv');
+var elasticsearch = require('elasticsearch');
 
 let files = 0;
+/* DEFINE ELASTIC_SEARCH */
 var client = new elasticsearch.Client({
 	host: [
 		{
-			host: '37d6b8adea5e4959e1f67d3e9639f557.us-west-1.aws.found.io',
-			auth: 'elastic:sFS3l8RF8xNYfCAsEkIzaWhD',
-			protocol: 'https',
-			port: 9243
+			host: process.env.ELASTIC_HOST,
+			auth: process.env.ELASTIC_AUTH,
+			protocol: process.env.ELASTIC_PROTOCOL,
+			port: process.env.ELASTIC_PORT
 		}
 	]
 });
