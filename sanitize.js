@@ -1,4 +1,5 @@
 var fs = require('fs');
+var path = require('path');
 var Fuse = require('fuse.js');
 var h2p = require('html2plaintext');
 var dotenv = require('dotenv');
@@ -6,6 +7,7 @@ dotenv.config();
 var elasticsearch = require('elasticsearch');
 
 /* DEFINE ELASTIC_SEARCH */
+/*
 var client = new elasticsearch.Client({
 	host: [
 		{
@@ -15,14 +17,50 @@ var client = new elasticsearch.Client({
 			port: process.env.ELASTIC_PORT
 		}
 	]
+});*/
+var client = new elasticsearch.Client({
+	//host: 'arn:aws:es:us-east-2:379689518484:domain/invidia',
+	host: 'https://search-video-data-domain-lo5oj6jfkwcejhg6y4mirb75ie.us-west-2.es.amazonaws.com',
+  log: []
 });
+
+function loopThroughFiles(){
+	var moveFrom = "./dump/reactjs";
+	var toPath = "./elasticsearch";
+	fs.readdir( moveFrom, function( err, files ) {
+        if( err ) {
+            console.error( "Could not list the directory.", err );
+            process.exit( 1 );
+        }
+
+				var counter = 0;
+        files.forEach( function( file, index ) {
+                // Make one pass and make the file complete
+                var fromPath = path.join( moveFrom, file );
+								var topath = path.join (toPath, file);
+                fs.stat( fromPath, function( error, stat ) {
+                    if( error ) {
+                        console.error( "Error stating file.", error );
+                        return;
+                    }
+
+										console.log("Sanitizing video", counter++);
+										sanitize(fromPath, toPath);
+
+                    if( stat.isFile() )
+                        console.log( "'%s' is a file.", fromPath );
+
+                } );
+        } );
+	} );
+}
 
 function fileToJson(file){ //file -> javascript object
   return new Promise((resolve, reject) => {
     fs.readFile(file, 'utf8', function (err,data) {
       if (err) reject(console.log(err));
-      writeToOutput(JSON.parse(data));
-      resolve(JSON.parse(data));
+			var formattedData = JSON.parse(data);
+      resolve(formattedData);
     });
   });
 }
@@ -33,12 +71,12 @@ function writeToOutput(data, file){
   });
 }
 
-async function sanitize(file){
+async function sanitize(file, outputFile){
   const b = await fileToJson(file);
   console.log("Sanitizing text...");
   try{
     const cleanedUpData = await sanitizeText(b);
-    writeToOutput(cleanedUpData);
+    writeToOutput(cleanedUpData, outputFile);
   }
   catch(err){
     console.log("Error in sanitize()");
@@ -72,8 +110,9 @@ async function searchElastic(toSearch){
   //console.log(searchResults[0], searchResults[1]);
 }
 
-//sanitize("./text/dannyinput.txt");
-searchElastic("react");
+loopThroughFiles();
+//sanitize("./text/nishanthelastic.txt");
+//searchElastic("react");
 //searchFuse("we're going");
 
 
@@ -88,31 +127,25 @@ function secondsToTimeStamp(seconds){
 function sanitizeText(data){ // Output Sanitized Text
     var result = [];
     for(video in data){//  For every video
-      var transcriptCues = Object.assign({}, data[video]);
-      var transcript = "";
+      var transcriptCues = data[video]; //Object.assign({}, data[video]);
+      //var transcript = "";
       var index = 0;
       var milliseconds = 0;
       var aliasVideo = transcriptCues;
       for(cue in aliasVideo["cues"]){ //  for every cue
         var aliasCue = aliasVideo["cues"][cue];
         aliasCue["timestamp"] = secondsToTimeStamp(aliasCue["timestamp"]); // NOTE Set timestamp
-        //milliseconds += parseInt(aliasCue["duration"]);
         var cleanText = h2p(aliasCue["text"]); // NOTE take out HTML tags, add extra space, take out \
         cleanText = cleanText.replace(/\\"/g, '"');
-        //cleanText = cleanText.replace(/\\\\/g, '');
-        cleanText += " ";
+        //cleanText += " ";
         aliasCue["text"] = cleanText;
-        //console.log(transcriptCues[transcript]["cues"][cue]["text"]);
-        //let temp = transcriptCues[transcript]["cues"][cue]["text"];
-        //transcriptCues[transcript]["cues"][cue]["text"] = temp.replace(/<[^>]*>/g, "").replace('&#39;'/g, "'");
-        //transcriptCues[transcript]["cues"][cue]["text"] = temp.replace(/<[^>]*>/g, "");
-        //console.log(transcriptCues[transcript]["cues"][cue]["text"]);
-        transcript += cleanText;
+        //transcript += cleanText;
+				/*
         if(cue == 0) aliasCue["startIndex"] = transcript.length - cleanText.length;
         else if(cue != 0) aliasCue["startIndex"] = transcript.length - cleanText.length + 1;// NOTE set start index
-        aliasCue["endIndex"] = transcript.length - 1; // NOTE set end index
+        aliasCue["endIndex"] = transcript.length - 1; // NOTE set end index*/
       }
-      aliasVideo["transcript"] = transcript // NOTE define entire transcript string
+      //aliasVideo["transcript"] = transcript // NOTE define entire transcript string
       var aliasStats = aliasVideo["info"]["statistics"];
       aliasVideo["relevantScore"] = (aliasStats["likeCount"] - aliasStats["dislikeCount"])/aliasStats["viewCount"];
       result.push(transcriptCues);
@@ -216,4 +249,12 @@ function connectToClient() {
   });
 }
 
-//TODO highlight the right parts for the front end and the cues that are relevant with its timestamp
+/*
+TODO - Test query for highlighting on transcript
+
+/* extra
+//console.log(transcriptCues[transcript]["cues"][cue]["text"]);
+//let temp = transcriptCues[transcript]["cues"][cue]["text"];
+//transcriptCues[transcript]["cues"][cue]["text"] = temp.replace(/<[^>]*>/g, "").replace('&#39;'/g, "'");
+//transcriptCues[transcript]["cues"][cue]["text"] = temp.replace(/<[^>]*>/g, "");
+//console.log(transcriptCues[transcript]["cues"][cue]["text"]);*/
