@@ -19,8 +19,7 @@ var client = new elasticsearch.Client({
 	]
 });*/
 var client = new elasticsearch.Client({
-	//host: 'arn:aws:es:us-east-2:379689518484:domain/invidia',
-	host: 'https://search-video-data-domain-lo5oj6jfkwcejhg6y4mirb75ie.us-west-2.es.amazonaws.com',
+	host: process.env.ELASTIC_HOST,
   log: []
 });
 
@@ -250,7 +249,6 @@ function connectToClient() {
 }
 
 /*
-TODO - Test query for highlighting on transcript
 
 /* extra
 //console.log(transcriptCues[transcript]["cues"][cue]["text"]);

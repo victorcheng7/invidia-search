@@ -1,6 +1,8 @@
 var request = require('request');
 var fs = require('fs');
 var elasticsearch = require('elasticsearch');
+var dotenv = require('dotenv');
+
 //33473
 
 
@@ -49,7 +51,7 @@ function search(){
 }
 */
 
-request("https://search-video-data-domain-lo5oj6jfkwcejhg6y4mirb75ie.us-west-2.es.amazonaws.com/youtube-video-data-index/_search?size=10000&q=*:*", function (error, response, body) {
+request(process.env.ELASTIC_HOST_10000, function (error, response, body) {
   console.log('error:', error);
   console.log('statusCode:', response && response.statusCode);
   var videos = JSON.parse(body).hits.hits;
