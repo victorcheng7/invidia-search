@@ -2,6 +2,7 @@ var path = require('path');
 var fs = require('fs');
 var Promise = require("bluebird");
 var dotenv = require('dotenv');
+dotenv.config();
 var elasticsearch = require('elasticsearch');
 
 let files = 0;
